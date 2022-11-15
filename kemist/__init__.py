@@ -1,2 +1,2 @@
-import core
-import database
+import kemist.core
+import kemist.database

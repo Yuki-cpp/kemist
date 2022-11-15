@@ -1,8 +1,9 @@
 import kemist as km
 
 
-def main(path):
-    dbm = km.database.DatabaseManager("test.sqlite3")
+def main(path, db):
+    dbm = km.database.DatabaseManager(db)
+    dbm.make_database()
 
     with open(path, encoding='utf-8') as input_file:
         csv_molecules = km.database.load_molecules(input_file)
@@ -21,8 +22,8 @@ def main(path):
                 db_molecules.append(molecule)
 
         # db_molecules should now contain the complete and reduced molecules list
-        dbm.update_molecules(db_molecules)
+        dbm.save_molecules(db_molecules)
 
 
 if __name__ == '__main__':
-    main("example_molecules.csv")
+    main("Database.csv", "test.sqlite3")
