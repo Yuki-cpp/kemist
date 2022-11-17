@@ -26,6 +26,7 @@ class DatabaseManager(object):
                 "iupac"	TEXT UNIQUE,
                 "formula"	TEXT UNIQUE,
                 "in_libview"	INTEGER,
+                "mode"	TEXT,
                 PRIMARY KEY("uid" AUTOINCREMENT)
             );
             CREATE TABLE IF NOT EXISTS "storage_units" (
@@ -44,9 +45,10 @@ class DatabaseManager(object):
             );
             CREATE TABLE "molecule_retention_times" (
                 "molecule_uid"	INTEGER NOT NULL,
+                "column"	TEXT NOT NULL,
                 "retention_time"	REAL NOT NULL,
                 FOREIGN KEY("molecule_uid") REFERENCES "molecules"("uid"),
-                PRIMARY KEY("molecule_uid","retention_time")
+                PRIMARY KEY("molecule_uid","column")
             );
             CREATE TABLE IF NOT EXISTS "molecule_storage" (
                 "molecule_uid"	INTEGER NOT NULL,
@@ -78,16 +80,23 @@ class DatabaseManager(object):
         self.connection.commit()
 
     def get_molecules(self):
-        res = self.cursor.execute("SELECT uid, iupac, formula, in_libview FROM molecules")
-        molecules = [km.Molecule(uid, iupac, formula, on_libview) for uid, iupac, formula, on_libview in
+        res = self.cursor.execute("SELECT uid, iupac, formula, in_libview, mode FROM molecules")
+        molecules = [km.Molecule(uid, iupac, formula, on_libview, mode) for uid, iupac, formula, on_libview, mode in
                      res.fetchall()]
 
         for m in molecules:
             res = self.cursor.execute("SELECT name FROM molecule_names WHERE molecule_uid=?", [m.uid])
-            m.known_names.extend(res.fetchall())
-            res = self.cursor.execute("SELECT retention_time FROM molecule_retention_times WHERE molecule_uid=?",
-                                      [m.uid])
-            m.retention_times.extend(res.fetchall())
+            for name, in res.fetchall():
+                m.known_names.append(name)
+
+            res = self.cursor.execute(
+                "SELECT retention_time, column FROM molecule_retention_times WHERE molecule_uid=?",
+                [m.uid])
+
+            for rt, column in res.fetchall():
+                m.retention_times[column] = rt
+
+            print(m.formula)
 
         return molecules
 
@@ -99,10 +108,10 @@ class DatabaseManager(object):
         for name in m.known_names:
             self.cursor.execute("INSERT OR IGNORE INTO molecule_names (name, molecule_uid) VALUES(?, ?)",
                                 [name, m.uid])
-        for rt in m.retention_times:
+        for column, value in m.retention_times.items():
             self.cursor.execute(
-                "INSERT OR IGNORE INTO molecule_retention_times (molecule_uid, retention_time) VALUES(?, ?)",
-                [m.uid, rt])
+                "INSERT OR IGNORE INTO molecule_retention_times (molecule_uid, column, retention_time) VALUES(?, ?, ?)",
+                [m.uid, column, value])
 
         if m.iupac is not None or m.formula is not None or m.is_on_libview is not None:
             req = "UPDATE molecules SET "
@@ -124,6 +133,12 @@ class DatabaseManager(object):
                 req += "in_libview=?"
                 request_args.append(m.is_on_libview)
 
+            if m.mode is not None:
+                if m.iupac is not None or m.formula is not None or m.is_on_libview is not None:
+                    req += ", "
+                req += "mode=?"
+                request_args.append(m.mode)
+
             req += " WHERE uid=?"
             request_args.append(m.uid)
             self.cursor.execute(req, request_args)
@@ -135,17 +150,18 @@ class DatabaseManager(object):
             # TODO proper error
             raise RuntimeError("Already exist in database Use update_molecule instead")
 
-        self.cursor.execute("INSERT INTO molecules (iupac, formula, in_libview) VALUES(?, ?, ?)",
-                            [m.iupac, m.formula, m.is_on_libview])
+        self.cursor.execute("INSERT INTO molecules (iupac, formula, in_libview, mode) VALUES(?, ?, ?, ?)",
+                            [m.iupac, m.formula, m.is_on_libview, m.mode])
         m.uid = self.cursor.lastrowid
 
         for name in m.known_names:
             self.cursor.execute("INSERT INTO molecule_names (name, molecule_uid) VALUES(?, ?)",
                                 [name, m.uid])
-        for rt in m.retention_times:
+
+        for column, value in m.retention_times.items():
             self.cursor.execute(
-                "INSERT INTO molecule_retention_times (molecule_uid, retention_time) VALUES(?, ?)",
-                [m.uid, rt])
+                "INSERT INTO molecule_retention_times (molecule_uid, column, retention_time) VALUES(?, ?, ?)",
+                [m.uid, column, value])
 
         self.connection.commit()
         return m

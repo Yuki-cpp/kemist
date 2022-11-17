@@ -1,0 +1,7 @@
+Name                     ,IUPAC name,Formula    ,MSMS library view,Mode,RT PFP,RT Scherzo
+3-methyl Adenine         ,          ,C6H7N5     ,yes              ,both,2.6   ,8.4
+Acetyl-L-Threonine       ,          ,C6H11NO4   ,yes              ,both,2.8   ,6.4
+Adenosine                ,          ,C10H13N5O4 ,yes              ,neg ,6.5   ,9.2
+Adenosine 5-monophosphate,          ,C10H14N5O7P,yes              ,both,4.1   ,3.2
+Agmatine                 ,          ,C5H14N4    ,no               ,pos ,8.2   ,2.1
+Allantoin                ,          ,C4H6N4O3   ,yes              ,pos ,9.8   ,1.5
