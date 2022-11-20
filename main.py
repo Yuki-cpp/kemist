@@ -40,10 +40,10 @@ def main(path, db, build):
         for m in db_molecules:
             m.try_to_complete()
 
-        dbm.save_molecules(db_molecules)
+        dbm.update_all_molecules(db_molecules)
 
 
 if __name__ == '__main__':
-    main("db1.csv", "test.sqlite3", True)
+    main("data/db1.csv", "test.sqlite3", True)
     print("Second file")
-    main("db2.csv", "test.sqlite3", False)
+    main("data/db2.csv", "test.sqlite3", False)

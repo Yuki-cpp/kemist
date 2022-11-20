@@ -166,9 +166,10 @@ class DatabaseManager(object):
         self.connection.commit()
         return m
 
-    def save_molecules(self, molecules):
+    def update_all_molecules(self, molecules):
         for m in molecules:
             if m.uid is None:
                 self.add_molecule(m)
             else:
                 self.update_molecule(m)
+   

@@ -1,13 +1,5 @@
 import fuzzysearch
 import cirpy
-import urllib.parse
-
-
-def _confirm(s):
-    answer = ""
-    while answer not in ["y", "n"]:
-        answer = input(s).lower()
-    return answer == "y"
 
 
 def _are_name_close(a, b):
@@ -47,21 +39,21 @@ class Molecule(object):
         for key, value in other.retention_times.items():
             self.retention_times[key] = value
 
-    def try_to_complete(self):
-        print(f"Trying to complete {self.known_names[0]}...")
+    def try_to_complete(self, logger=print):
+        logger(f"Trying to complete {self.known_names[0]}...")
         if self.iupac is None:
             for n in self.known_names:
                 self.iupac = cirpy.resolve(n, "iupac_name")
                 if self.iupac is not None:
                     if _is_list_of_strings(self.iupac):
                         selected_iupac = self.iupac[0]
-                        print(f"{self.known_names[0]} has ambiguous IUPAC name.")
-                        print(f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}...")
+                        logger(f"{self.known_names[0]} has ambiguous IUPAC name.")
+                        logger(f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}...")
                         self.iupac = selected_iupac
                     break
 
         if self.iupac is None:
-            print(f"Could not complete {self.known_names[0]}...")
+            logger(f"Could not complete {self.known_names[0]}...")
             return
 
         if self.formula is None:

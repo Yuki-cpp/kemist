@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kemist"
+version = "0.0.1"
+dependencies = [
+    "fuzzysearch",
+    'CIRpy @ git+https://github.com/Yuki-cpp/CIRpy.git@master',
+]
+
+[tool.setuptools.packages]
+find = { }
+
+[project.scripts]
+kemist-db = "kemist.kemist_db:kemist_db"
