@@ -95,9 +95,6 @@ class DatabaseManager(object):
 
             for rt, column in res.fetchall():
                 m.retention_times[column] = rt
-
-            print(m.formula)
-
         return molecules
 
     def update_molecule(self, m: km.Molecule):
@@ -166,10 +163,17 @@ class DatabaseManager(object):
         self.connection.commit()
         return m
 
+    def get_known_retention_times(self):
+        res = self.cursor.execute("SELECT DISTINCT column FROM molecule_retention_times")
+        names = []
+        for name, in res.fetchall():
+            names.append(name)
+
+        return names
+
     def update_all_molecules(self, molecules):
         for m in molecules:
             if m.uid is None:
                 self.add_molecule(m)
             else:
                 self.update_molecule(m)
-   

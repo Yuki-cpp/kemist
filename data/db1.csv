@@ -1,10 +1,10 @@
-Name         ,IUPAC name,Formula    ,MSMS library view,Mode,RT PFP,RT Scherzo
-Biotin       ,          ,C10H16N2O3S,no               ,neg ,3.7   ,2.3
-Choline      ,          ,C5H14NO    ,no               ,both,2.8   ,1.2
-cis-Aconitate,          ,C6H6O6     ,no               ,neg ,6.6   ,3.8
-Creatinine   ,          ,C4H7N3O    ,yes              ,both,4.9   ,6.7
-Cytidine     ,          ,C9H13N3O5  ,yes              ,pos ,5.4   ,9.1
-Cytosine     ,          ,C4H5N3O    ,no               ,neg ,2.8   ,4.8
-D-Arabitol   ,          ,C5H12O5    ,no               ,pos ,2.7   ,7.4
-Citric acid  ,          ,C6H5O7     ,no               ,both,4.8   ,8.4
-Adenine      ,          ,           ,yes              ,both,7.8   ,7.5
+Name         ;IUPAC name;Formula    ;MSMS library view;Mode;RT PFP;RT Scherzo
+Biotin       ;          ;C10H16N2O3S;no               ;neg ;3.7   ;2.3
+Choline      ;          ;C5H14NO    ;no               ;both;2.8   ;1.2
+cis-Aconitate;          ;C6H6O6     ;no               ;neg ;6.6   ;3.8
+Creatinine   ;          ;C4H7N3O    ;yes              ;both;4.9   ;6.7
+Cytidine     ;          ;C9H13N3O5  ;yes              ;pos ;5.4   ;9.1
+Cytosine     ;          ;C4H5N3O    ;no               ;neg ;2.8   ;4.8
+D-Arabitol   ;          ;C5H12O5    ;no               ;pos ;2.7   ;7.4
+Citric acid  ;          ;C6H5O7     ;no               ;both;4.8   ;8.4
+Adenine      ;          ;           ;yes              ;both;7.8   ;7.5

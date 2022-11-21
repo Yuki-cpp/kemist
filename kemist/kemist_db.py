@@ -1,5 +1,8 @@
 import argparse
 import logging
+import appdirs
+import configparser
+import os
 from os.path import exists
 
 import kemist.database as kdb
@@ -8,15 +11,30 @@ logger = logging.getLogger("kemist")
 logging.basicConfig()
 
 
-def create(args):
-    logger.debug(f"create : {args.dest} - {args.molecules} - {args.storage} - {args.complete}")
+def _load_app_dirs():
+    data_dir = os.path.join(appdirs.user_data_dir("kemist"), "databases")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
-    if exists(args.dest):
+    cfg_dir = appdirs.user_config_dir("kemist")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    return data_dir, cfg_dir
+
+
+def create(args):
+    data_dir, config_dir = _load_app_dirs()
+    db_path = os.path.join(data_dir, args.dest)
+
+    logger.debug(f"create : {db_path} - {args.molecules} - {args.storage} - {args.complete}")
+
+    if exists(db_path):
         logger.error(f"Invalid input, {args.dest} already exists.")
         return
 
     logger.info(f"Creating database : {args.dest}")
-    dbm = kdb.DatabaseManager(args.dest)
+    dbm = kdb.DatabaseManager(db_path)
     dbm.make_database()
 
     if args.molecules:
@@ -32,6 +50,13 @@ def create(args):
 
     dbm.update_all_molecules(csv_molecules)
 
+    if args.make_default or len(os.listdir(data_dir)) == 1:
+        logger.info(f"Setting {args.dest} as default database")
+        config = configparser.ConfigParser()
+        config['DEFAULTS'] = {'database_path': db_path}
+        with open(os.path.join(config_dir, 'config.ini'), 'w') as configfile:
+            config.write(configfile)
+
 
 def update(args):
     pass
@@ -42,11 +67,68 @@ def complete(args):
 
 
 def export(args):
-    pass
+    data_dir, config_dir = _load_app_dirs()
+
+    if args.name is not None:
+        known_databases = os.listdir(data_dir)
+        if args.name not in known_databases:
+            logger.error(f"{args.name} is not a valid database name")
+            return
+        db_path = os.path.join(data_dir, args.name)
+    else:
+        config = configparser.ConfigParser()
+        config.read(os.path.join(config_dir, 'config.ini'))
+        db_path = config['DEFAULTS']['database_path']
+
+    dbm = kdb.DatabaseManager(db_path)
+
+    def as_str(mol, rts):
+        res = f"{mol.known_names[0]};"
+        res += f"{mol.iupac};" if mol.iupac is not None else ';'
+        res += f"{mol.formula};" if mol.formula is not None else ';'
+        res += f"yes;" if mol.is_on_libview == 1 else 'no;'
+        res += f"{mol.mode}" if mol.mode is not None else ''
+
+        for rt in rts:
+            res += f"; {mol.retention_times.get(rt, '')}"
+
+        return res
+
+    rt_names = dbm.get_known_retention_times()
+
+    with open(args.out, 'w') as output:
+        output.write("Name; IUPAC name; Formula; MSMS Library view; Mode")
+        for rt in rt_names:
+            output.write(";" + rt)
+        output.write("\n")
+        
+        for m in dbm.get_molecules():
+            output.write(as_str(m, rt_names) + "\n")
 
 
 def set_default(args):
-    pass
+    data_dir, config_dir = _load_app_dirs()
+
+    known_databases = os.listdir(data_dir)
+    if args.name not in known_databases:
+        logger.error(f"{args.name} is not a valid database name")
+        return
+
+    logger.info(f"Setting {args.name} as default database")
+    config = configparser.ConfigParser()
+    config['DEFAULTS'] = {'database_path': os.path.join(data_dir, args.name)}
+    with open(os.path.join(config_dir, 'config.ini'), 'w') as configfile:
+        config.write(configfile)
+
+
+def list_databases(_):
+    data_dir, _ = _load_app_dirs()
+    res = []
+    for path in os.listdir(data_dir):
+        if os.path.isfile(os.path.join(data_dir, path)):
+            res.append(path)
+
+    logger.info(f"Existing databases are :\n{res}")
 
 
 def kemist_db():
@@ -63,7 +145,7 @@ def kemist_db():
 
     subparsers = parser.add_subparsers(dest='verb')
     parser_create = subparsers.add_parser('create', help='Create a new database')
-    parser_create.add_argument('dest', help='Database output file')
+    parser_create.add_argument('dest', help='Database name')
 
     parser_create.add_argument(
         "-m",
@@ -84,7 +166,11 @@ def kemist_db():
         action='store_true',
         help='If set, will try to complete the molecules list using CIR'
     )
-
+    parser_create.add_argument(
+        '--make-default',
+        action='store_true',
+        help='If set, this database will become the default one.'
+    )
     parser_create.set_defaults(func=create)
 
     parser_update = subparsers.add_parser('update', help='Update an existing database')
@@ -94,10 +180,16 @@ def kemist_db():
     parser_complete.set_defaults(func=complete)
 
     parser_export = subparsers.add_parser('export', help='Export a database as a CSV file')
+    parser_export.add_argument('out', help='Output file')
+    parser_export.add_argument('--name', help='Database to export', required=False, default=None)
     parser_export.set_defaults(func=export)
 
     parser_set_default = subparsers.add_parser('set', help='Select the default database')
+    parser_set_default.add_argument('name', help='Database name to set as default')
     parser_set_default.set_defaults(func=set_default)
+
+    parser_list = subparsers.add_parser('list', help='List existing databases')
+    parser_list.set_defaults(func=list_databases)
 
     args = parser.parse_args()
 

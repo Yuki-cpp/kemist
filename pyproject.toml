@@ -8,6 +8,8 @@ version = "0.0.1"
 dependencies = [
     "fuzzysearch",
     'CIRpy @ git+https://github.com/Yuki-cpp/CIRpy.git@master',
+    "appdirs",
+    "configparser"
 ]
 
 [tool.setuptools.packages]

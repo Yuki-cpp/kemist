@@ -4,10 +4,10 @@ import kemist.core as km
 def load_molecules(file):
     molecules = []
     # Consume header
-    headers = file.readline().split(",")
+    headers = file.readline().split(";")
 
     for line in file.readlines():
-        columns = line.split(",")
+        columns = line.split(";")
 
         name = columns[0].strip().lower()
 
@@ -37,7 +37,7 @@ def load_storage_areas(file):
     storages = {}
     file.readline()  # Consume header
     for line in file.readlines():
-        columns = line.split(",")
+        columns = line.split(";")
 
         storage_name = columns[0].strip().lower()
         molecule_name = columns[1].strip().lower()
