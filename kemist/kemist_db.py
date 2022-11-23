@@ -6,6 +6,44 @@ import os
 from os.path import exists
 
 import kemist.database as kdb
+import kemist.core as km
+
+
+class KemistDb(object):
+    def __init__(self):
+        self.db_manager = kdb.KemistDbManager("kemist")
+
+    def create(self, name, molecules_input_file, storage_input_fine, should_complete_molecules, make_default):
+        if name in self.db_manager.get_database_names():
+            km.logger.error(f"Database {name} already exists")
+            return
+
+        connection, cursor = self.db_manager.get_database_handle(name)
+        if connection is None:
+            km.logger.error(f"Could not create and connect to {name}")
+            return
+
+        if molecules_input_file is not None:
+            km.logger.info(f"Adding molecules to the database")
+            csv_molecules = kdb.load_molecules(molecules_input_file)
+            if should_complete_molecules:
+                km.logger.logger.info(f"Updating molecules informations")
+                for m in csv_molecules:
+                    m.try_to_complete()
+
+            # TODO add molecules to database
+
+            if storage_input_fine is not None:
+                # TODO Parse storage information from file
+                # TODO Add storage information to database
+                pass
+        else:
+            km.logger.warn(f"No molecules input file specified. The database will stay empty.")
+
+        if make_default:
+            km.logger.info(f"Setting {name} as the default database")
+            self.db_manager.set_default_database(name)
+
 
 logger = logging.getLogger("kemist")
 logging.basicConfig()
@@ -101,7 +139,7 @@ def export(args):
         for rt in rt_names:
             output.write(";" + rt)
         output.write("\n")
-        
+
         for m in dbm.get_molecules():
             output.write(as_str(m, rt_names) + "\n")
 
