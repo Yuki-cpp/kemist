@@ -75,29 +75,14 @@ class KemistDb(object):
         database.make_structure()
 
         if molecules_input_file is not None:
-            molecules = kapps.load_molecules(molecules_input_file)
+            new_molecules = kapps.load_molecules(molecules_input_file)
         else:
-            molecules = []
+            new_molecules = []
 
-        final_molecules = []
-        for molecule in molecules:
-            found = False
+        existing_molecules = []
+        KemistDb._merge_in_existing_molecule_list(new_molecules, existing_molecules, should_complete_molecules)
 
-            if should_complete_molecules:
-                molecule.try_to_complete()
-
-            for db_mol in final_molecules:
-                equi = km.are_same_molecules(molecule, db_mol)
-                if equi == km.Equivalence.STRICT:
-                    db_mol.merge_with(molecule)
-                    found = True
-                elif equi == km.Equivalence.RELAXED:
-                    if _confirm(f"Are {molecule.known_names[0]} the same molecule as {db_mol.known_names[0]}"):
-                        db_mol.merge_with(molecule)
-                        found = True
-            if not found:
-                final_molecules.append(molecule)
-        database.update_all_molecules(final_molecules)
+        database.update_all_molecules(existing_molecules)
 
         if storage_input_fine is not None:
             storage_units = kapps.load_storage_areas(storage_input_fine)
@@ -116,6 +101,70 @@ class KemistDb(object):
         database.update_all_storage_units(storage_units)
 
         self.config.save()
+
+    @staticmethod
+    def _merge_in_existing_molecule_list(new_molecules, existing_molecules, should_complete_molecules):
+        for new_molecule in new_molecules:
+            if should_complete_molecules:
+                new_molecule.try_to_complete()
+
+            for existing_molecule in existing_molecules:
+                equi = km.are_same_molecules(new_molecule, existing_molecule)
+                if equi == km.Equivalence.STRICT:
+                    existing_molecules.merge_with(new_molecule)
+                    found = True
+                elif equi == km.Equivalence.RELAXED:
+                    if _confirm(
+                            f"Are {new_molecule.known_names[0]} the same molecule as {existing_molecules.known_names[0]}? [y/n]\n"):
+                        existing_molecules.merge_with(new_molecule)
+                        found = True
+            if not found:
+                existing_molecules.append(new_molecule)
+
+    def update(self, name, molecules_input_file, storage_input_fine, should_complete_molecules):
+        if name is None:
+            name = self.config.get_default_database_name()
+            if name is None:
+                km.logger.error(f"No database found")
+                return
+            km.logger.info(f"Using default database {name}")
+
+        path = self.config.get_database_path(name)
+        if path is None:
+            km.logger.error(f"Could not open database {name}")
+            return
+        database = kemist.database.Database(path)
+
+        if molecules_input_file is not None:
+            new_molecules = kapps.load_molecules(molecules_input_file)
+            existing_molecules = database.get_molecules()
+            KemistDb._merge_in_existing_molecule_list(new_molecules, existing_molecules, should_complete_molecules)
+            database.update_all_molecules(existing_molecules)
+
+        if storage_input_fine is not None:
+            new_storage_units = kapps.load_storage_areas(storage_input_fine)
+            existing_storage_units = database.get_storage_units()
+            existing_molecules = database.get_molecules()
+
+            for new_unit in new_storage_units:
+
+                for m in new_unit.molecules:
+                    for existing_molecule in existing_molecules:
+                        equi = km.are_same_molecules(m, existing_molecule)
+                        if equi == km.Equivalence.STRICT:
+                            m.merge_with(existing_molecule)
+                            break
+
+                found = False
+                for existing_unit in existing_storage_units:
+                    if new_unit.name == existing_unit.name:
+                        existing_unit.molecules.extend(new_unit.molecules)
+                        break
+
+                if not found:
+                    existing_storage_units.append(new_unit)
+
+            database.update_all_storage_units(existing_storage_units)
 
 
 def kemist_db():
@@ -159,6 +208,29 @@ def kemist_db():
         help='If set, this database will become the default one.'
     )
 
+    parser_update = subparsers.add_parser('update', help='Update an existing database')
+    parser_update.add_argument('--name', help='Database to export', required=False, default=None)
+
+    parser_update.add_argument(
+        "-m",
+        "--molecules",
+        help="CSV input file for the list of molecules.",
+        type=argparse.FileType("r"),
+        required=False,
+    )
+    parser_update.add_argument(
+        "-s",
+        "--storage",
+        help="CSV input file for the molecule storage.",
+        type=argparse.FileType("r"),
+        required=False,
+    )
+    parser_update.add_argument(
+        '-c', '--complete',
+        action='store_true',
+        help='If set, will try to complete the molecules list using CIR'
+    )
+
     parser_set_default = subparsers.add_parser('set', help='Select the default database')
     parser_set_default.add_argument('name', help='Database name to set as default')
 
@@ -182,6 +254,8 @@ def kemist_db():
         kemist_core.list_databases()
     elif args.verb == "export":
         kemist_core.export(args.name, args.dest)
+    elif args.verb == "update":
+        kemist_core.update(args.name, args.molecules, args.storage, args.complete)
 
 
 if __name__ == '__main__':
