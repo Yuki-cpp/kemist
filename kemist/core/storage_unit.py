@@ -1,4 +1,4 @@
-import kemist2.core as km
+import kemist.core as km
 
 
 class StorageUnit(object):

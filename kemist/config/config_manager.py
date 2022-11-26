@@ -3,7 +3,7 @@ import configparser
 import json
 import os
 
-from kemist2.core import logger
+from kemist.core import logger
 
 
 def get_app_dirs():
@@ -49,7 +49,7 @@ class ConfigManager(object):
         if name not in self.databases:
             logger.error(f"{name} is not a known database.")
             logger.debug(f"Known databases are {self.databases}")
-            raise RuntimeError(f"{name} is not a known database. Known databases are {self.databases}")
+            return None
         return os.path.join(self.data_dir, name)
 
     def set_default_database(self, name):
@@ -64,7 +64,7 @@ class ConfigManager(object):
     def register_database(self, name, set_as_default=False):
         if name in self.databases:
             logger.error(f"{name} is already a registered database.")
-            raise RuntimeError(f"{name} is already a registered database.")
+            return None
 
         self.databases.append(name)
         logger.info(f"Registered new database: {name}")

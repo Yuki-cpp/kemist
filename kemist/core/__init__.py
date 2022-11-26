@@ -1,4 +1,5 @@
-import logging
-from .molecule import *
+from .logging_utils import logger, set_verbose_logging
 
-logger = logging.getLogger("kemist")
+from .molecule import Molecule, are_same_molecules, Equivalence
+
+from .storage_unit import StorageUnit

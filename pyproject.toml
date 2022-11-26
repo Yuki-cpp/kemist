@@ -16,4 +16,4 @@ dependencies = [
 find = { }
 
 [project.scripts]
-kemist-db = "kemist.kemist_db:kemist_db"
+kemist-db = "kemist.apps.kemist_db:kemist_db"

@@ -39,12 +39,13 @@ def load_storage_areas(file):
     for line in file.readlines():
         columns = line.split(";")
 
-        storage_name = columns[0].strip().lower()
-        molecule_name = columns[1].strip().lower()
+        storage_name = columns[1].strip().lower()
+        molecule_name = columns[0].strip().lower()
 
         if storage_name in storages:
-            storages[storage_name].append(molecule_name)
+            storages[storage_name].append(km.Molecule(known_names=[molecule_name]))
         else:
-            storages[storage_name] = [molecule_name]
+            storages[storage_name] = [km.Molecule(known_names=[molecule_name])]
 
-    return storages
+    sto = [km.StorageUnit(name, molecules) for name, molecules in storages.items()]
+    return sto

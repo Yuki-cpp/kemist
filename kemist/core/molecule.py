@@ -1,5 +1,7 @@
 import fuzzysearch
 import cirpy
+from enum import Enum
+from kemist.core import logger
 
 
 def _are_name_close(a, b):
@@ -39,61 +41,51 @@ class Molecule(object):
         for key, value in other.retention_times.items():
             self.retention_times[key] = value
 
-    def try_to_complete(self, logger=print):
-        logger(f"Trying to complete {self.known_names[0]}...")
+    def try_to_complete(self):
+        logger.info(f"Trying to complete {self.known_names[0]}...")
         if self.iupac is None:
             for n in self.known_names:
                 self.iupac = cirpy.resolve(n, "iupac_name")
                 if self.iupac is not None:
                     if _is_list_of_strings(self.iupac):
                         selected_iupac = self.iupac[0]
-                        logger(f"{self.known_names[0]} has ambiguous IUPAC name.")
-                        logger(f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}...")
+                        logger.warning(f"{self.known_names[0]} has ambiguous IUPAC name.")
+                        logger.warning(
+                            f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}...")
                         self.iupac = selected_iupac
                     break
 
         if self.iupac is None:
-            logger(f"Could not complete {self.known_names[0]}...")
+            logger.warning(f"Could not complete {self.known_names[0]}...")
             return
 
         if self.formula is None:
             self.formula = cirpy.resolve(self.iupac, "formula")
 
 
+class Equivalence(Enum):
+    STRICT = 1
+    RELAXED = 2
+    NONE = 3
+
+
 def are_same_molecules(m1: Molecule, m2: Molecule, strict=False):
     if m1.uid is not None and m2.uid is not None:
-        return m1.uid == m2.uid
+        return Equivalence.STRICT if m1.uid == m2.uid else Equivalence.NONE
 
     if m1.iupac is not None and m2.iupac is not None:
-        return m1.iupac == m2.iupac
+        return Equivalence.STRICT if m1.iupac == m2.iupac else Equivalence.NONE
 
     if m1.formula is not None and m2.formula is not None:
-        return m1.formula == m2.formula
+        return Equivalence.STRICT if m1.formula == m2.formula else Equivalence.NONE
 
     if any(name in m2.known_names for name in m1.known_names):
-        return True
+        return Equivalence.STRICT
 
-    for name1 in m1.known_names:
-        for name2 in m2.known_names:
-            if not strict and _are_name_close(name1, name2):
-                return True
+    if not strict:
+        logger.debug("Looking for a non strict match")
+        for name1 in m1.known_names:
+            for name2 in m2.known_names:
+                if _are_name_close(name1, name2):
+                    return Equivalence.RELAXED
     return False
-
-
-def find_matching_molecules(m1: Molecule, others):
-    perfect_matches = []
-    potential_matches = []
-    non_matches = []
-
-    for m2 in others:
-        if are_same_molecules(m1, m2, strict=True):
-            perfect_matches.append(m2)
-            continue
-
-        if are_same_molecules(m1, m2, strict=False):
-            potential_matches.append(m2)
-            continue
-
-        non_matches.append(m2)
-
-    return perfect_matches, potential_matches, non_matches
