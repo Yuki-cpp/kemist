@@ -6,7 +6,8 @@ from kemist.core import logger
 
 def _are_name_close(a, b):
     tot = len(fuzzysearch.find_near_matches(a, b, max_l_dist=1)) + len(
-        fuzzysearch.find_near_matches(b, a, max_l_dist=1))
+        fuzzysearch.find_near_matches(b, a, max_l_dist=1)
+    )
     return tot > 0
 
 
@@ -15,8 +16,9 @@ def _is_list_of_strings(lst):
 
 
 class Molecule(object):
-    def __init__(self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None,
-                 retention_times=None):
+    def __init__(
+        self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None, retention_times=None
+    ):
         self.uid = uid
         self.iupac = iupac
         self.formula = formula
@@ -51,7 +53,8 @@ class Molecule(object):
                         selected_iupac = self.iupac[0]
                         logger.warning(f"{self.known_names[0]} has ambiguous IUPAC name.")
                         logger.warning(
-                            f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}...")
+                            f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}..."
+                        )
                         self.iupac = selected_iupac
                     break
 

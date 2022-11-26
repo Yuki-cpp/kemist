@@ -45,10 +45,10 @@ class KemistDb(object):
 
         def as_str(mol, rts):
             res = f"{mol.known_names[0]};"
-            res += f"{mol.iupac};" if mol.iupac is not None else ';'
-            res += f"{mol.formula};" if mol.formula is not None else ';'
-            res += f"yes;" if mol.is_on_libview == 1 else 'no;'
-            res += f"{mol.mode}" if mol.mode is not None else ''
+            res += f"{mol.iupac};" if mol.iupac is not None else ";"
+            res += f"{mol.formula};" if mol.formula is not None else ";"
+            res += f"yes;" if mol.is_on_libview == 1 else "no;"
+            res += f"{mol.mode}" if mol.mode is not None else ""
 
             for retention_time in rts:
                 res += f"; {mol.retention_times.get(rt, '')}"
@@ -57,7 +57,7 @@ class KemistDb(object):
 
         rt_names = database.get_known_retention_times()
 
-        with open(dest, 'w') as output:
+        with open(dest, "w") as output:
             output.write("Name; IUPAC name; Formula; MSMS Library view; Mode")
             for rt in rt_names:
                 output.write(";" + rt)
@@ -115,7 +115,8 @@ class KemistDb(object):
                     found = True
                 elif equi == km.Equivalence.RELAXED:
                     if _confirm(
-                            f"Are {new_molecule.known_names[0]} the same molecule as {existing_molecules.known_names[0]}? [y/n]\n"):
+                        f"Are {new_molecule.known_names[0]} the same molecule as {existing_molecules.known_names[0]}? [y/n]\n"
+                    ):
                         existing_molecules.merge_with(new_molecule)
                         found = True
             if not found:
@@ -169,19 +170,14 @@ class KemistDb(object):
 
 def kemist_db():
     parser = argparse.ArgumentParser(
-        prog='kemist-db',
-        description='Database management tool for Kemist',
-        epilog="Plz Gib Mony :'(")
-
-    parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Print debug info'
+        prog="kemist-db", description="Database management tool for Kemist", epilog="Plz Gib Mony :'("
     )
 
-    subparsers = parser.add_subparsers(dest='verb')
-    parser_create = subparsers.add_parser('create', help='Create a new database')
-    parser_create.add_argument('dest', help='Database name')
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print debug info")
+
+    subparsers = parser.add_subparsers(dest="verb")
+    parser_create = subparsers.add_parser("create", help="Create a new database")
+    parser_create.add_argument("dest", help="Database name")
 
     parser_create.add_argument(
         "-m",
@@ -198,18 +194,14 @@ def kemist_db():
         required=False,
     )
     parser_create.add_argument(
-        '-c', '--complete',
-        action='store_true',
-        help='If set, will try to complete the molecules list using CIR'
+        "-c", "--complete", action="store_true", help="If set, will try to complete the molecules list using CIR"
     )
     parser_create.add_argument(
-        '--make-default',
-        action='store_true',
-        help='If set, this database will become the default one.'
+        "--make-default", action="store_true", help="If set, this database will become the default one."
     )
 
-    parser_update = subparsers.add_parser('update', help='Update an existing database')
-    parser_update.add_argument('--name', help='Database to export', required=False, default=None)
+    parser_update = subparsers.add_parser("update", help="Update an existing database")
+    parser_update.add_argument("--name", help="Database to export", required=False, default=None)
 
     parser_update.add_argument(
         "-m",
@@ -226,19 +218,17 @@ def kemist_db():
         required=False,
     )
     parser_update.add_argument(
-        '-c', '--complete',
-        action='store_true',
-        help='If set, will try to complete the molecules list using CIR'
+        "-c", "--complete", action="store_true", help="If set, will try to complete the molecules list using CIR"
     )
 
-    parser_set_default = subparsers.add_parser('set', help='Select the default database')
-    parser_set_default.add_argument('name', help='Database name to set as default')
+    parser_set_default = subparsers.add_parser("set", help="Select the default database")
+    parser_set_default.add_argument("name", help="Database name to set as default")
 
-    subparsers.add_parser('list', help='List existing databases')
+    subparsers.add_parser("list", help="List existing databases")
 
-    parser_export = subparsers.add_parser('export', help='Export a database as a CSV file')
-    parser_export.add_argument('dest', help='Output file')
-    parser_export.add_argument('--name', help='Database to export', required=False, default=None)
+    parser_export = subparsers.add_parser("export", help="Export a database as a CSV file")
+    parser_export.add_argument("dest", help="Output file")
+    parser_export.add_argument("--name", help="Database to export", required=False, default=None)
 
     args = parser.parse_args()
 
@@ -258,5 +248,5 @@ def kemist_db():
         kemist_core.update(args.name, args.molecules, args.storage, args.complete)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     kemist_db()

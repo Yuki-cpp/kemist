@@ -27,7 +27,7 @@ def get_app_dirs():
 class ConfigManager(object):
     def __init__(self):
         self.data_dir, self.cfg_dir = get_app_dirs()
-        self.config_file = os.path.join(self.cfg_dir, 'config.ini')
+        self.config_file = os.path.join(self.cfg_dir, "config.ini")
 
         config = configparser.ConfigParser()
         if not config.read(self.config_file):
@@ -35,8 +35,8 @@ class ConfigManager(object):
             self.default_database = None
             self.databases = []
         else:
-            self.default_database = config['SETTINGS']['default_database']
-            self.databases = json.loads(config['SETTINGS']['databases'])
+            self.default_database = config["SETTINGS"]["default_database"]
+            self.databases = json.loads(config["SETTINGS"]["databases"])
             logger.debug(f"Settings : {config['SETTINGS']}")
 
     def get_default_database_name(self):
@@ -86,9 +86,6 @@ class ConfigManager(object):
     def save(self):
         logger.info(f"Saving configuration")
         config = configparser.ConfigParser()
-        config['SETTINGS'] = {
-            'default_database': self.default_database,
-            'databases': f"{json.dumps(self.databases)}"
-        }
-        with open(self.config_file, 'w') as configfile:
+        config["SETTINGS"] = {"default_database": self.default_database, "databases": f"{json.dumps(self.databases)}"}
+        with open(self.config_file, "w") as configfile:
             config.write(configfile)

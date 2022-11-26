@@ -10,12 +10,11 @@ def load_molecules(file):
         columns = line.split(";")
 
         name = columns[0].strip().lower()
-
         iupac = columns[1].strip().lower()
-        iupac = iupac if iupac != '' else None
+        iupac = iupac if iupac != "" else None
 
         formula = columns[2].strip()
-        formula = formula if formula != '' else None
+        formula = formula if formula != "" else None
 
         on_libview = False
         if columns[3] and columns[3].strip().lower() == "yes":
@@ -28,8 +27,15 @@ def load_molecules(file):
             retention_times[headers[i].strip()] = float(columns[i])
 
         molecules.append(
-            km.Molecule(iupac=iupac, formula=formula, is_on_libview=on_libview, mode=mode, known_names=[name],
-                        retention_times=retention_times))
+            km.Molecule(
+                iupac=iupac,
+                formula=formula,
+                is_on_libview=on_libview,
+                mode=mode,
+                known_names=[name],
+                retention_times=retention_times,
+            )
+        )
     return molecules
 
 

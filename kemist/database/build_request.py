@@ -5,7 +5,8 @@ def make_database_structure(connection, cursor):
     km.logger.debug(f"Creating new database...")
 
     km.logger.debug(f"Removing Triggers and Tables...")
-    cursor.executescript('''
+    cursor.executescript(
+        """
         DROP TRIGGER IF EXISTS "clear_storage_units_deps";
         DROP TRIGGER IF EXISTS "clear_molecules_deps";
         DROP TABLE IF EXISTS "molecule_storage";
@@ -13,10 +14,12 @@ def make_database_structure(connection, cursor):
         DROP TABLE IF EXISTS "molecule_retention_times";
         DROP TABLE IF EXISTS "molecule_names";
         DROP TABLE IF EXISTS "molecules";
-    ''')
+    """
+    )
 
     km.logger.debug(f"Creating molecules and storage Tables...")
-    cursor.executescript('''
+    cursor.executescript(
+        """
         CREATE TABLE IF NOT EXISTS "molecules" (
             "uid"	INTEGER NOT NULL UNIQUE,
             "iupac"	TEXT UNIQUE,
@@ -29,10 +32,12 @@ def make_database_structure(connection, cursor):
             "name"	TEXT NOT NULL UNIQUE,
             PRIMARY KEY("name")
         );
-    ''')
+    """
+    )
 
     km.logger.debug(f"Creating other Tables...")
-    cursor.executescript('''
+    cursor.executescript(
+        """
         CREATE TABLE IF NOT EXISTS "molecule_names" (
             "name"	TEXT NOT NULL,
             "molecule_uid"	INTEGER NOT NULL,
@@ -52,10 +57,11 @@ def make_database_structure(connection, cursor):
             FOREIGN KEY("molecule_uid") REFERENCES "molecules"("uid"),
             FOREIGN KEY("storage_name") REFERENCES "storage_units"("name")
         );
-    ''')
-
+    """
+    )
     km.logger.debug(f"Creating Triggers...")
-    cursor.executescript('''
+    cursor.executescript(
+        """
         CREATE TRIGGER clear_molecules_deps
             BEFORE DELETE
             ON molecules
@@ -71,7 +77,8 @@ def make_database_structure(connection, cursor):
         BEGIN
             DELETE FROM molecule_storage WHERE storage_name=OLD.name;
         END;            
-    ''')
+    """
+    )
 
     km.logger.debug(f"Commiting transaction...")
     connection.commit()

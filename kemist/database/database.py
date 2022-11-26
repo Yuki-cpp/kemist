@@ -14,17 +14,18 @@ class Database(object):
 
     def _molecule_from_req(self, req, req_args):
         res = self.cursor.execute(req, req_args)
-        molecules = [Molecule(uid, iupac, formula, on_libview, mode) for uid, iupac, formula, on_libview, mode in
-                     res.fetchall()]
+        molecules = [
+            Molecule(uid, iupac, formula, on_libview, mode) for uid, iupac, formula, on_libview, mode in res.fetchall()
+        ]
 
         for m in molecules:
             res = self.cursor.execute("SELECT name FROM molecule_names WHERE molecule_uid=?", [m.uid])
-            for name, in res.fetchall():
+            for (name,) in res.fetchall():
                 m.known_names.append(name)
 
             res = self.cursor.execute(
-                "SELECT retention_time, column FROM molecule_retention_times WHERE molecule_uid=?",
-                [m.uid])
+                "SELECT retention_time, column FROM molecule_retention_times WHERE molecule_uid=?", [m.uid]
+            )
 
             for rt, column in res.fetchall():
                 m.retention_times[column] = rt
@@ -41,7 +42,7 @@ class Database(object):
         storage_units = []
 
         res = self.cursor.execute("SELECT name FROM storage_units")
-        for name, in res.fetchall():
+        for (name,) in res.fetchall():
             logger.debug(f"Fetching storage content for {name}")
 
             request = "SELECT uid, iupac, formula, in_libview, mode FROM molecules/n"
@@ -57,7 +58,7 @@ class Database(object):
     def get_known_retention_times(self):
         res = self.cursor.execute("SELECT DISTINCT column FROM molecule_retention_times")
         names = []
-        for name, in res.fetchall():
+        for (name,) in res.fetchall():
             names.append(name)
 
         return names
@@ -78,8 +79,9 @@ class Database(object):
                     logger.error(f"Can't add an unknow molecule to storage. Skipping {m.known_names[0]}...")
                     continue
 
-                self.cursor.execute("INSERT OR IGNORE INTO molecule_storage (molecule_uid, storage_name) VALUES(?, ?)",
-                                    [m.uid, s.name])
+                self.cursor.execute(
+                    "INSERT OR IGNORE INTO molecule_storage (molecule_uid, storage_name) VALUES(?, ?)", [m.uid, s.name]
+                )
 
         self.connection.commit()
 
@@ -88,18 +90,20 @@ class Database(object):
             logger.error(f"{m.known_names[0]} already exists in database (uid: {m.uid}). Skipping it")
             return
 
-        self.cursor.execute("INSERT INTO molecules (iupac, formula, in_libview, mode) VALUES(?, ?, ?, ?)",
-                            [m.iupac, m.formula, m.is_on_libview, m.mode])
+        self.cursor.execute(
+            "INSERT INTO molecules (iupac, formula, in_libview, mode) VALUES(?, ?, ?, ?)",
+            [m.iupac, m.formula, m.is_on_libview, m.mode],
+        )
         m.uid = self.cursor.lastrowid
 
         for name in m.known_names:
-            self.cursor.execute("INSERT INTO molecule_names (name, molecule_uid) VALUES(?, ?)",
-                                [name, m.uid])
+            self.cursor.execute("INSERT INTO molecule_names (name, molecule_uid) VALUES(?, ?)", [name, m.uid])
 
         for column, value in m.retention_times.items():
             self.cursor.execute(
                 "INSERT INTO molecule_retention_times (molecule_uid, column, retention_time) VALUES(?, ?, ?)",
-                [m.uid, column, value])
+                [m.uid, column, value],
+            )
         return m
 
     def _update_molecule(self, m: Molecule):
@@ -108,12 +112,12 @@ class Database(object):
             return
 
         for name in m.known_names:
-            self.cursor.execute("INSERT OR IGNORE INTO molecule_names (name, molecule_uid) VALUES(?, ?)",
-                                [name, m.uid])
+            self.cursor.execute("INSERT OR IGNORE INTO molecule_names (name, molecule_uid) VALUES(?, ?)", [name, m.uid])
         for column, value in m.retention_times.items():
             self.cursor.execute(
                 "INSERT OR IGNORE INTO molecule_retention_times (molecule_uid, column, retention_time) VALUES(?, ?, ?)",
-                [m.uid, column, value])
+                [m.uid, column, value],
+            )
 
         if m.iupac is not None or m.formula is not None or m.is_on_libview is not None:
             req = "UPDATE molecules SET "
