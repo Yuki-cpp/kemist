@@ -9,11 +9,13 @@ dependencies = [
     "fuzzysearch",
     'CIRpy @ git+https://github.com/Yuki-cpp/CIRpy.git@master',
     "appdirs",
-    "configparser"
+    "configparser",
+    "argformat"
 ]
 
 [tool.setuptools.packages]
 find = { }
 
 [project.scripts]
-kemist-db = "kemist.apps.kemist_db:kemist_db"
+kemist-db = "kemist.apps.entry_points:kemist_db"
+kemist = "kemist.apps.entry_points:kemist"
