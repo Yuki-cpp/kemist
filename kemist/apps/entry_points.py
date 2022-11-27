@@ -42,3 +42,7 @@ def kemist_db():
         kemist_core.export(args.database, args.output)
     elif args.verb == "update":
         kemist_core.update(args.database, molecules, storage_units, args.complete)
+
+
+if __name__ == '__main__':
+    kemist_db()

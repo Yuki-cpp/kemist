@@ -17,7 +17,8 @@ def _is_list_of_strings(lst):
 
 class Molecule(object):
     def __init__(
-        self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None, retention_times=None
+            self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None,
+            retention_times=None
     ):
         self.uid = uid
         self.iupac = iupac
@@ -44,14 +45,17 @@ class Molecule(object):
             self.retention_times[key] = value
 
     def try_to_complete(self):
-        logger.info(f"Trying to complete {self.known_names[0]}...")
+        logger.info(f"Trying to complete {self.known_names[0]}")
+        logger.debug(f"Current IUPAC : {self.iupac}")
+        logger.debug(f"Current Formula : {self.formula}")
+
         if self.iupac is None:
             for n in self.known_names:
                 self.iupac = cirpy.resolve(n, "iupac_name")
                 if self.iupac is not None:
                     if _is_list_of_strings(self.iupac):
                         selected_iupac = self.iupac[0]
-                        logger.warning(f"{self.known_names[0]} has ambiguous IUPAC name.")
+                        logger.warning(f"{self.known_names[0]} has an ambiguous IUPAC name.")
                         logger.warning(
                             f"Selecting {selected_iupac} and discarding the following ones: {self.iupac[1:]}..."
                         )
@@ -72,7 +76,7 @@ class Equivalence(Enum):
     NONE = 3
 
 
-def are_same_molecules(m1: Molecule, m2: Molecule, strict=False):
+def are_same_molecules(m1: Molecule, m2: Molecule):
     if m1.uid is not None and m2.uid is not None:
         return Equivalence.STRICT if m1.uid == m2.uid else Equivalence.NONE
 
@@ -85,10 +89,8 @@ def are_same_molecules(m1: Molecule, m2: Molecule, strict=False):
     if any(name in m2.known_names for name in m1.known_names):
         return Equivalence.STRICT
 
-    if not strict:
-        logger.debug("Looking for a non strict match")
-        for name1 in m1.known_names:
-            for name2 in m2.known_names:
-                if _are_name_close(name1, name2):
-                    return Equivalence.RELAXED
-    return False
+    for name1 in m1.known_names:
+        for name2 in m2.known_names:
+            if _are_name_close(name1, name2):
+                return Equivalence.RELAXED
+    return Equivalence.NONE

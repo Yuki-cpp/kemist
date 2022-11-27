@@ -3,6 +3,7 @@ import kemist.config
 import kemist.database
 
 import kemist.apps as kapps
+from typing import List
 
 
 class KemistDb(object):
@@ -57,51 +58,68 @@ class KemistDb(object):
             for m in database.get_molecules():
                 output.write(as_str(m, rt_names) + "\n")
 
-    def create(self, name, new_molecules, storage_units, should_complete_molecules, make_default):
+    def create(self, name: str, new_molecules: List[km.Molecule], storage_units: List[km.StorageUnit],
+               should_complete_molecules: bool, make_default: bool):
+        km.logger.info("Creating database")
         db_path = self.config.register_database(name, make_default)
         if db_path is None:
             return
-
         database = kemist.database.Database(db_path)
         database.make_structure()
 
+        km.logger.info("Processing molecules")
         existing_molecules = []
         KemistDb._merge_in_existing_molecule_list(new_molecules, existing_molecules, should_complete_molecules)
         database.update_all_molecules(existing_molecules)
 
+        km.logger.info("Processing storage units")
         db_molecules = database.get_molecules()
         for su in storage_units:
-            for m in su.molecules:
-                for db_mol in db_molecules:
-                    equi = km.are_same_molecules(m, db_mol)
-                    if equi == km.Equivalence.STRICT:
-                        m.merge_with(db_mol)
-                        break
-
+            km.logger.debug(f"Processing {su.name}")
+            for new_molecule in su.molecules:
+                if should_complete_molecules:
+                    new_molecule.try_to_complete()
+            KemistDb._merge_in_existing_molecule_list(db_molecules, su.molecules, False, False)
+        database.update_all_molecules(su.molecules)
         database.update_all_storage_units(storage_units)
 
         self.config.save()
 
     @staticmethod
-    def _merge_in_existing_molecule_list(new_molecules, existing_molecules, should_complete_molecules):
+    def _merge_in_existing_molecule_list(new_molecules: List[km.Molecule], existing_molecules: List[km.Molecule],
+                                         should_complete_molecules: bool, add_non_existing: bool = True):
         for new_molecule in new_molecules:
             if should_complete_molecules:
                 new_molecule.try_to_complete()
 
-            for existing_molecule in existing_molecules:
-                equi = km.are_same_molecules(new_molecule, existing_molecule)
-                if equi == km.Equivalence.STRICT:
-                    existing_molecules.merge_with(new_molecule)
-                    found = True
-                elif equi == km.Equivalence.RELAXED:
+            strict_match = next(
+                filter(lambda m: km.are_same_molecules(new_molecule, m) == km.Equivalence.STRICT, existing_molecules),
+                None)
+            found = False
+            if strict_match is not None:
+                strict_match.merge_with(new_molecule)
+                found = True
+            else:
+                relaxed_match = next(
+                    filter(lambda m: km.are_same_molecules(new_molecule, m) == km.Equivalence.RELAXED,
+                           existing_molecules),
+                    None)
+                while relaxed_match is not None:
                     if kapps.confirm(
-                        f"Are {new_molecule.known_names[0]}"
-                        " the same molecule as {existing_molecules.known_names[0]}? "
-                        "[y/n]\n"
+                            f"Is {new_molecule.known_names[0]}"
+                            f" the same molecule as {relaxed_match.known_names[0]}? "
+                            f"[y/n]\n"
                     ):
-                        existing_molecules.merge_with(new_molecule)
+                        relaxed_match.merge_with(new_molecule)
                         found = True
-            if not found:
+                        break
+
+                    relaxed_match = next(
+                        filter(lambda m: km.are_same_molecules(new_molecule, m) == km.Equivalence.RELAXED,
+                               existing_molecules),
+                        None)
+
+            if not found and add_non_existing:
                 existing_molecules.append(new_molecule)
 
     def update(self, name, new_molecules, new_storage_units, should_complete_molecules):
