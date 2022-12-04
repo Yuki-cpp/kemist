@@ -12,26 +12,24 @@ def kemist_db():
 
     km.set_verbose_logging(args.verbose)
 
-    if args.interactive:
-        kapps.confirm = kapps.interactive_confirm
-        km.logger.debug(f"Using interactive matching")
-    elif args.relaxed:
-        kapps.confirm = kapps.relaxed_confirm
-        km.logger.debug(f"Using relaxed matching")
-    else:
-        km.logger.debug(f"Using strict matching")
+    molecules = []
+    storage_units = []
+    if args.verb in ["create", "update"]:
+        if args.interactive:
+            kapps.confirm = kapps.interactive_confirm
+            km.logger.debug(f"Using interactive matching")
+        elif args.relaxed:
+            kapps.confirm = kapps.relaxed_confirm
+            km.logger.debug(f"Using relaxed matching")
+        else:
+            km.logger.debug(f"Using strict matching")
+
+        if args.molecules is not None:
+            molecules = kapps.load_molecules(args.molecules)
+        if args.storage is not None:
+            storage_units = kapps.load_storage_areas(args.storage)
 
     kemist_core = kapps.KemistDb()
-
-    if args.molecules is not None:
-        molecules = kapps.load_molecules(args.molecules)
-    else:
-        molecules = []
-    if args.storage is not None:
-        storage_units = kapps.load_storage_areas(args.storage)
-    else:
-        storage_units = []
-
     if args.verb == "create":
         kemist_core.create(args.database, molecules, storage_units, args.complete, args.make_default)
     elif args.verb == "set":
@@ -44,5 +42,5 @@ def kemist_db():
         kemist_core.update(args.database, molecules, storage_units, args.complete)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     kemist_db()

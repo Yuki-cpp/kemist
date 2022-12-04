@@ -22,8 +22,8 @@ def make_database_structure(connection, cursor):
         """
         CREATE TABLE IF NOT EXISTS "molecules" (
             "uid"	INTEGER NOT NULL UNIQUE,
-            "iupac"	TEXT UNIQUE,
-            "formula"	TEXT UNIQUE,
+            "iupac"	TEXT,
+            "formula"	TEXT,
             "in_libview"	INTEGER,
             "mode"	TEXT,
             PRIMARY KEY("uid" AUTOINCREMENT)

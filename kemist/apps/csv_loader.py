@@ -10,7 +10,7 @@ def load_molecules(file):
         columns = line.split(";")
 
         name = columns[0].strip().lower()
-        iupac = columns[1].strip().lower()
+        iupac = columns[1].strip()
         iupac = iupac if iupac != "" else None
 
         formula = columns[2].strip()

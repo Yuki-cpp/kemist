@@ -17,8 +17,7 @@ def _is_list_of_strings(lst):
 
 class Molecule(object):
     def __init__(
-            self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None,
-            retention_times=None
+        self, uid=None, iupac=None, formula=None, is_on_libview=None, mode=None, known_names=None, retention_times=None
     ):
         self.uid = uid
         self.iupac = iupac
@@ -80,11 +79,11 @@ def are_same_molecules(m1: Molecule, m2: Molecule):
     if m1.uid is not None and m2.uid is not None:
         return Equivalence.STRICT if m1.uid == m2.uid else Equivalence.NONE
 
-    if m1.iupac is not None and m2.iupac is not None:
-        return Equivalence.STRICT if m1.iupac == m2.iupac else Equivalence.NONE
-
     if m1.formula is not None and m2.formula is not None:
         return Equivalence.STRICT if m1.formula == m2.formula else Equivalence.NONE
+
+    if m1.iupac is not None and m2.iupac is not None:
+        return Equivalence.STRICT if m1.iupac == m2.iupac else Equivalence.NONE
 
     if any(name in m2.known_names for name in m1.known_names):
         return Equivalence.STRICT
